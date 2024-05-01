@@ -962,7 +962,7 @@ describe('vim.diagnostic', function()
       eq(
         { 3, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next()
+        vim.diagnostic.goto_next({_highest = true})
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -970,7 +970,7 @@ describe('vim.diagnostic', function()
       eq(
         { 5, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next()
+        vim.diagnostic.goto_next({_highest = true})
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -991,7 +991,7 @@ describe('vim.diagnostic', function()
       eq(
         { 4, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next()
+        vim.diagnostic.goto_next({_highest = true})
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -999,7 +999,7 @@ describe('vim.diagnostic', function()
       eq(
         { 6, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next()
+        vim.diagnostic.goto_next({_highest = true})
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -1021,7 +1021,7 @@ describe('vim.diagnostic', function()
       eq(
         { 2, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.HINT } })
+        vim.diagnostic.goto_next()
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -1029,7 +1029,7 @@ describe('vim.diagnostic', function()
       eq(
         { 3, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.HINT } })
+        vim.diagnostic.goto_next()
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -1037,7 +1037,7 @@ describe('vim.diagnostic', function()
       eq(
         { 4, 0 },
         exec_lua([[
-        vim.diagnostic.goto_next({ severity = { min = vim.diagnostic.severity.HINT } })
+        vim.diagnostic.goto_next()
         return vim.api.nvim_win_get_cursor(0)
       ]])
       )
@@ -1098,6 +1098,29 @@ describe('vim.diagnostic', function()
         vim.api.nvim_win_set_buf(0, diagnostic_bufnr)
         vim.api.nvim_win_set_cursor(0, {3, 1})
         return vim.diagnostic.get_prev_pos { namespace = diagnostic_ns, wrap = false}
+      ]]
+      )
+    end)
+
+    it('works on blank line #28397', function()
+      eq(
+        { 0, 2 },
+        exec_lua [[
+        local test_bufnr = vim.api.nvim_create_buf(true, false)
+        vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, {
+          'first line',
+          '',
+          '',
+          'end line',
+        })
+        vim.diagnostic.set(diagnostic_ns, test_bufnr, {
+          make_info('Diagnostic #1', 0, 2, 0, 2),
+          make_info('Diagnostic #2', 2, 0, 2, 0),
+          make_info('Diagnostic #3', 2, 0, 2, 0),
+        })
+        vim.api.nvim_win_set_buf(0, test_bufnr)
+        vim.api.nvim_win_set_cursor(0, {3, 0})
+        return vim.diagnostic.get_prev_pos { namespace = diagnostic_ns}
       ]]
       )
     end)

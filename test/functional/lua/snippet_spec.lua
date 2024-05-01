@@ -97,9 +97,9 @@ describe('vim.snippet', function()
 
   it('does not jump outside snippet range', function()
     test_expand_success({ 'function $1($2)', '  $0', 'end' }, { 'function ()', '  ', 'end' })
-    eq(false, exec_lua('return vim.snippet.jumpable(-1)'))
+    eq(false, exec_lua('return vim.snippet.active({ direction = -1 })'))
     feed('<Tab><Tab>i')
-    eq(false, exec_lua('return vim.snippet.jumpable(1)'))
+    eq(false, exec_lua('return vim.snippet.active( { direction = 1 })'))
   end)
 
   it('navigates backwards', function()
@@ -246,7 +246,7 @@ describe('vim.snippet', function()
   it('correctly indents with newlines', function()
     local curbuf = api.nvim_get_current_buf()
     test_expand_success(
-      { 'function($2)\n$3\nend' },
+      { 'function($2)\n\t$3\nend' },
       { 'function()', '  ', 'end' },
       [[
       vim.opt.sw = 2
@@ -255,8 +255,30 @@ describe('vim.snippet', function()
     )
     api.nvim_buf_set_lines(curbuf, 0, -1, false, {})
     test_expand_success(
-      { 'func main() {\n$1\n}' },
+      { 'function($2)\n$3\nend' },
+      { 'function()', '', 'end' },
+      [[
+      vim.opt.sw = 2
+      vim.opt.expandtab = true
+    ]]
+    )
+    api.nvim_buf_set_lines(curbuf, 0, -1, false, {})
+    test_expand_success(
+      { 'func main() {\n\t$1\n}' },
       { 'func main() {', '\t', '}' },
+      [[
+      vim.opt.sw = 4
+      vim.opt.ts = 4
+      vim.opt.expandtab = false
+    ]]
+    )
+    api.nvim_buf_set_lines(curbuf, 0, -1, false, {})
+    test_expand_success(
+      { '${1:name} :: ${2}\n${1:name} ${3}= ${0:undefined}' },
+      {
+        'name :: ',
+        'name = undefined',
+      },
       [[
       vim.opt.sw = 4
       vim.opt.ts = 4

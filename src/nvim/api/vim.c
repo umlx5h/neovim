@@ -45,6 +45,7 @@
 #include "nvim/keycodes.h"
 #include "nvim/log.h"
 #include "nvim/lua/executor.h"
+#include "nvim/lua/treesitter.h"
 #include "nvim/macros_defs.h"
 #include "nvim/mapping.h"
 #include "nvim/mark.h"
@@ -1806,12 +1807,13 @@ Float nvim__id_float(Float flt)
 /// @return Map of various internal stats.
 Dictionary nvim__stats(Arena *arena)
 {
-  Dictionary rv = arena_dict(arena, 5);
+  Dictionary rv = arena_dict(arena, 6);
   PUT_C(rv, "fsync", INTEGER_OBJ(g_stats.fsync));
   PUT_C(rv, "log_skip", INTEGER_OBJ(g_stats.log_skip));
   PUT_C(rv, "lua_refcount", INTEGER_OBJ(nlua_get_global_ref_count()));
   PUT_C(rv, "redraw", INTEGER_OBJ(g_stats.redraw));
   PUT_C(rv, "arena_alloc_count", INTEGER_OBJ((Integer)arena_alloc_count));
+  PUT_C(rv, "ts_query_parse_count", INTEGER_OBJ((Integer)tslua_query_parse_count));
   return rv;
 }
 
@@ -2280,20 +2282,18 @@ void nvim_error_event(uint64_t channel_id, Integer lvl, String data)
   ELOG("async error on channel %" PRId64 ": %s", channel_id, data.size ? data.data : "");
 }
 
-/// Set info for the completion candidate index.
-/// if the info was shown in a window, then the
-/// window and buffer ids are returned for further
-/// customization. If the text was not shown, an
-/// empty dict is returned.
+/// EXPERIMENTAL: this API may change in the future.
 ///
-/// @param index  the completion candidate index
+/// Sets info for the completion item at the given index. If the info text was shown in a window,
+/// returns the window and buffer ids, or empty dict if not shown.
+///
+/// @param index  Completion candidate index
 /// @param opts   Optional parameters.
 ///       - info: (string) info text.
 /// @return Dictionary containing these keys:
 ///       - winid: (number) floating window id
 ///       - bufnr: (number) buffer id in floating window
-Dictionary nvim_complete_set(Integer index, Dict(complete_set) *opts, Arena *arena)
-  FUNC_API_SINCE(12)
+Dictionary nvim__complete_set(Integer index, Dict(complete_set) *opts, Arena *arena)
 {
   Dictionary rv = arena_dict(arena, 2);
   if (HAS_KEY(opts, complete_set, info)) {
